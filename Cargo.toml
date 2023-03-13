@@ -1,6 +1,6 @@
 [package]
 name = "ethereum_serde_utils"
-version = "0.5.0"
+version = "0.5.1"
 edition = "2021"
 description = "Serialization and deserialization utilities for JSON representations of Ethereum types"
 license = "Apache-2.0"
