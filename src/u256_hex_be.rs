@@ -1,5 +1,4 @@
-use ethereum_types::U256;
-
+use alloy_primitives::U256;
 use serde::de::Visitor;
 use serde::{de, Deserializer, Serialize, Serializer};
 use std::fmt;
@@ -55,7 +54,7 @@ where
 
 #[cfg(test)]
 mod test {
-    use ethereum_types::U256;
+    use alloy_primitives::U256;
     use serde::{Deserialize, Serialize};
     use serde_json;
 
@@ -69,37 +68,43 @@ mod test {
     #[test]
     fn encoding() {
         assert_eq!(
-            &serde_json::to_string(&Wrapper { val: 0.into() }).unwrap(),
+            &serde_json::to_string(&Wrapper { val: U256::from(0) }).unwrap(),
             "\"0x0\""
         );
         assert_eq!(
-            &serde_json::to_string(&Wrapper { val: 1.into() }).unwrap(),
+            &serde_json::to_string(&Wrapper { val: U256::from(1) }).unwrap(),
             "\"0x1\""
         );
         assert_eq!(
-            &serde_json::to_string(&Wrapper { val: 256.into() }).unwrap(),
+            &serde_json::to_string(&Wrapper {
+                val: U256::from(256)
+            })
+            .unwrap(),
             "\"0x100\""
         );
         assert_eq!(
-            &serde_json::to_string(&Wrapper { val: 65.into() }).unwrap(),
+            &serde_json::to_string(&Wrapper {
+                val: U256::from(65)
+            })
+            .unwrap(),
             "\"0x41\""
         );
         assert_eq!(
-            &serde_json::to_string(&Wrapper { val: 1024.into() }).unwrap(),
+            &serde_json::to_string(&Wrapper {
+                val: U256::from(1024)
+            })
+            .unwrap(),
             "\"0x400\""
         );
         assert_eq!(
             &serde_json::to_string(&Wrapper {
-                val: U256::max_value() - 1
+                val: U256::MAX - U256::from(1)
             })
             .unwrap(),
             "\"0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe\""
         );
         assert_eq!(
-            &serde_json::to_string(&Wrapper {
-                val: U256::max_value()
-            })
-            .unwrap(),
+            &serde_json::to_string(&Wrapper { val: U256::MAX }).unwrap(),
             "\"0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\""
         );
     }
@@ -108,15 +113,19 @@ mod test {
     fn decoding() {
         assert_eq!(
             serde_json::from_str::<Wrapper>("\"0x0\"").unwrap(),
-            Wrapper { val: 0.into() },
+            Wrapper { val: U256::from(0) },
         );
         assert_eq!(
             serde_json::from_str::<Wrapper>("\"0x41\"").unwrap(),
-            Wrapper { val: 65.into() },
+            Wrapper {
+                val: U256::from(65)
+            },
         );
         assert_eq!(
             serde_json::from_str::<Wrapper>("\"0x400\"").unwrap(),
-            Wrapper { val: 1024.into() },
+            Wrapper {
+                val: U256::from(1024)
+            },
         );
         assert_eq!(
             serde_json::from_str::<Wrapper>(
@@ -124,7 +133,7 @@ mod test {
             )
             .unwrap(),
             Wrapper {
-                val: U256::max_value() - 1
+                val: U256::MAX - U256::from(1)
             },
         );
         assert_eq!(
@@ -132,9 +141,7 @@ mod test {
                 "\"0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\""
             )
             .unwrap(),
-            Wrapper {
-                val: U256::max_value()
-            },
+            Wrapper { val: U256::MAX },
         );
         serde_json::from_str::<Wrapper>("\"0x\"").unwrap_err();
         serde_json::from_str::<Wrapper>("\"0x0400\"").unwrap_err();
