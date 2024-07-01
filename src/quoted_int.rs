@@ -4,7 +4,7 @@
 //!
 //! Quotes can be optional during decoding.
 
-use ethereum_types::U256;
+use alloy_primitives::U256;
 use serde::{Deserializer, Serializer};
 use serde_derive::{Deserialize, Serialize};
 use std::convert::TryFrom;
@@ -177,7 +177,7 @@ pub mod quoted_u256 {
         where
             E: serde::de::Error,
         {
-            U256::from_dec_str(v).map_err(serde::de::Error::custom)
+            U256::from_str_radix(v, 10).map_err(serde::de::Error::custom)
         }
     }
 
@@ -209,12 +209,12 @@ mod test {
     #[test]
     fn u256_with_quotes() {
         assert_eq!(
-            &serde_json::to_string(&WrappedU256(U256::one())).unwrap(),
+            &serde_json::to_string(&WrappedU256(U256::from(1))).unwrap(),
             "\"1\""
         );
         assert_eq!(
             serde_json::from_str::<WrappedU256>("\"1\"").unwrap(),
-            WrappedU256(U256::one())
+            WrappedU256(U256::from(1))
         );
     }
 
