@@ -2,6 +2,7 @@ mod quoted_int;
 
 pub mod address_hex;
 pub mod fixed_bytes_hex;
+pub mod h256_hex;
 pub mod hex;
 pub mod hex_vec;
 pub mod json_str;
