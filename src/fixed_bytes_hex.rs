@@ -50,3 +50,11 @@ pub mod bytes_4_hex {
 pub mod bytes_8_hex {
     bytes_hex!(8);
 }
+
+pub mod bytes_20_hex {
+    bytes_hex!(20);
+}
+
+pub mod bytes_32_hex {
+    bytes_hex!(32);
+}
