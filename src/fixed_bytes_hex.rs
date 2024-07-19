@@ -54,7 +54,3 @@ pub mod bytes_8_hex {
 pub mod bytes_20_hex {
     bytes_hex!(20);
 }
-
-pub mod bytes_32_hex {
-    bytes_hex!(32);
-}
