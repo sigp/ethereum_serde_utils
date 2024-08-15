@@ -32,3 +32,69 @@ where
     array.copy_from_slice(&decoded);
     Ok(array.into())
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use serde::{Deserialize, Serialize};
+
+    #[derive(Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(transparent)]
+    struct Wrapper {
+        #[serde(with = "super")]
+        val: B256,
+    }
+
+    #[test]
+    fn encoding() {
+        assert_eq!(
+            &serde_json::to_string(&Wrapper { val: B256::ZERO }).unwrap(),
+            "\"0x0000000000000000000000000000000000000000000000000000000000000000\""
+        );
+        assert_eq!(
+            &serde_json::to_string(&Wrapper {
+                val: B256::with_last_byte(0x03)
+            })
+            .unwrap(),
+            "\"0x0000000000000000000000000000000000000000000000000000000000000003\""
+        );
+        assert_eq!(
+            &serde_json::to_string(&Wrapper {
+                val: B256::repeat_byte(0x03)
+            })
+            .unwrap(),
+            "\"0x0303030303030303030303030303030303030303030303030303030303030303\""
+        );
+    }
+
+    #[test]
+    fn decoding() {
+        assert_eq!(
+            serde_json::from_str::<Wrapper>(
+                "\"0x0000000000000000000000000000000000000000000000000000000000000000\""
+            )
+            .unwrap(),
+            Wrapper { val: B256::ZERO },
+        );
+        assert_eq!(
+            serde_json::from_str::<Wrapper>(
+                "\"0x0000000000000000000000000000000000000000000000000000000000000003\""
+            )
+            .unwrap(),
+            Wrapper {
+                val: B256::with_last_byte(0x03)
+            },
+        );
+
+        // Require 0x.
+        serde_json::from_str::<Wrapper>(
+            "\"0000000000000000000000000000000000000000000000000000000000000000\"",
+        )
+        .unwrap_err();
+        // Wrong length.
+        serde_json::from_str::<Wrapper>(
+            "\"0x00000000000000000000000000000000000000000000000000000000000000\"",
+        )
+        .unwrap_err();
+    }
+}
