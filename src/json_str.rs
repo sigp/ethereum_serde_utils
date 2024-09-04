@@ -24,7 +24,6 @@ where
     serde_json::from_str(&json_str).map_err(D::Error::custom)
 }
 
-
 #[cfg(test)]
 mod test {
     use serde::{Deserialize, Serialize};
@@ -34,36 +33,41 @@ mod test {
         val_1: String,
         val_2: u8,
         val_3: Vec<u8>,
-        val_4: Option<u32>
+        val_4: Option<u32>,
     }
 
     #[test]
     fn encoding() {
         assert_eq!(
-            &serde_json::to_string(&Wrapper { 
+            &serde_json::to_string(&Wrapper {
                 val_1: "Test".to_string(),
                 val_2: 5,
                 val_3: vec![9],
                 val_4: Some(10)
-             }).unwrap(),
-           "{\"val_1\":\"Test\",\"val_2\":5,\"val_3\":[9],\"val_4\":10}"
+            })
+            .unwrap(),
+            "{\"val_1\":\"Test\",\"val_2\":5,\"val_3\":[9],\"val_4\":10}"
         );
         assert_eq!(
-            &serde_json::to_string(&Wrapper { 
+            &serde_json::to_string(&Wrapper {
                 val_1: "Test".to_string(),
                 val_2: 5,
                 val_3: vec![9],
                 val_4: None
-             }).unwrap(),
-           "{\"val_1\":\"Test\",\"val_2\":5,\"val_3\":[9],\"val_4\":null}"
+            })
+            .unwrap(),
+            "{\"val_1\":\"Test\",\"val_2\":5,\"val_3\":[9],\"val_4\":null}"
         );
     }
 
     #[test]
     fn decoding() {
         assert_eq!(
-            serde_json::from_str::<Wrapper>("{\"val_1\":\"Test\",\"val_2\":5,\"val_3\":[9],\"val_4\":10}").unwrap(),
-            Wrapper { 
+            serde_json::from_str::<Wrapper>(
+                "{\"val_1\":\"Test\",\"val_2\":5,\"val_3\":[9],\"val_4\":10}"
+            )
+            .unwrap(),
+            Wrapper {
                 val_1: "Test".to_string(),
                 val_2: 5,
                 val_3: vec![9],
@@ -71,23 +75,22 @@ mod test {
             },
         );
         assert_eq!(
-            serde_json::from_str::<Wrapper>("{\"val_1\":\"Test\",\"val_2\":5,\"val_3\":[9],\"val_4\":null}").unwrap(),
-            Wrapper { 
+            serde_json::from_str::<Wrapper>(
+                "{\"val_1\":\"Test\",\"val_2\":5,\"val_3\":[9],\"val_4\":null}"
+            )
+            .unwrap(),
+            Wrapper {
                 val_1: "Test".to_string(),
                 val_2: 5,
                 val_3: vec![9],
                 val_4: None
             },
         );
-        
+
         // Violating type constraints.
-        serde_json::from_str::<Wrapper>(
-           "{\"val_1\":1,\"val_2\":5,\"val_3\":[9],\"val_4\":null}",
-        )
-        .unwrap_err();
-        serde_json::from_str::<Wrapper>(
-        "{\"val_1\":\"Test\",\"val_2\":5,\"val_4\":null}",
-        )
-        .unwrap_err();
+        serde_json::from_str::<Wrapper>("{\"val_1\":1,\"val_2\":5,\"val_3\":[9],\"val_4\":null}")
+            .unwrap_err();
+        serde_json::from_str::<Wrapper>("{\"val_1\":\"Test\",\"val_2\":5,\"val_4\":null}")
+            .unwrap_err();
     }
 }
