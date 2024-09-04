@@ -21,3 +21,52 @@ where
 {
     deserializer.deserialize_str(PrefixedHexVisitor)
 }
+
+#[cfg(test)]
+mod test {
+    use serde::{Deserialize, Serialize};
+
+    #[derive(Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(transparent)]
+    struct Wrapper {
+        #[serde(with = "super")]
+        val: Vec<u8>,
+    }
+
+    #[test]
+    fn encoding() {
+        assert_eq!(
+            &serde_json::to_string(&Wrapper { val: vec![0] }).unwrap(),
+            "\"0x00\""
+        );
+        assert_eq!(
+            &serde_json::to_string(&Wrapper { val: vec![0, 1] }).unwrap(),
+            "\"0x0001\""
+        );
+        assert_eq!(
+            &serde_json::to_string(&Wrapper {
+                val: vec![0, 1, 2, 3]
+            })
+            .unwrap(),
+            "\"0x00010203\""
+        );
+    }
+
+    #[test]
+    fn decoding() {
+        assert_eq!(
+            serde_json::from_str::<Wrapper>("\"0x00\"").unwrap(),
+            Wrapper { val: vec![0] },
+        );
+        assert_eq!(
+            serde_json::from_str::<Wrapper>("\"0x0001\"").unwrap(),
+            Wrapper { val: vec![0, 1] },
+        );
+        assert_eq!(
+            serde_json::from_str::<Wrapper>("\"0x00010203\"").unwrap(),
+            Wrapper {
+                val: vec![0, 1, 2, 3]
+            },
+        );
+    }
+}

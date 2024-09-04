@@ -19,3 +19,53 @@ where
 {
     bytes_4_hex::deserialize(deserializer).map(u32::from_le_bytes)
 }
+
+#[cfg(test)]
+pub mod test {
+    use serde::{Deserialize, Serialize};
+
+    #[derive(Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(transparent)]
+    struct Wrapper {
+        #[serde(with = "super")]
+        val: u32,
+    }
+
+    #[test]
+    fn encoding() {
+        assert_eq!(
+            &serde_json::to_string(&Wrapper { val: 0 }).unwrap(),
+            "\"0x00000000\""
+        );
+        assert_eq!(
+            &serde_json::to_string(&Wrapper { val: 5 }).unwrap(),
+            "\"0x05000000\""
+        );
+
+        assert_eq!(
+            &serde_json::to_string(&Wrapper { val: u32::MAX }).unwrap(),
+            "\"0xffffffff\""
+        );
+    }
+
+    #[test]
+    fn decoding() {
+        assert_eq!(
+            serde_json::from_str::<Wrapper>("\"0x00000000\"").unwrap(),
+            Wrapper { val: 0 },
+        );
+        assert_eq!(
+            serde_json::from_str::<Wrapper>("\"0x05000000\"").unwrap(),
+            Wrapper { val: 5 },
+        );
+        assert_eq!(
+            serde_json::from_str::<Wrapper>("\"0xffffffff\"").unwrap(),
+            Wrapper { val: u32::MAX },
+        );
+
+        // Wrong length.
+        serde_json::from_str::<Wrapper>("\"0xfffffffff\"").unwrap_err();
+        // Requires 0x.
+        serde_json::from_str::<Wrapper>("\"00000000\"").unwrap_err();
+    }
+}
