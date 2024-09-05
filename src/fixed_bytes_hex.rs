@@ -40,6 +40,99 @@ macro_rules! bytes_hex {
             array.copy_from_slice(&decoded);
             Ok(array)
         }
+
+        #[cfg(test)]
+        mod test {
+            use super::*;
+            use serde::{Deserialize, Serialize};
+
+            #[derive(Debug, PartialEq, Serialize, Deserialize)]
+            #[serde(transparent)]
+            struct Wrapper {
+                #[serde(with = "super")]
+                val: [u8; BYTES_LEN],
+            }
+
+            fn generate_string_value(v1: &str, v2: &str) -> String {
+                let mut i = 0;
+                let mut value = String::new();
+                while i < BYTES_LEN * 2 {
+                    if i % 2 == 0 {
+                        value.push_str(v1);
+                    } else {
+                        value.push_str(v2);
+                    }
+                    i += 1;
+                }
+                value
+            }
+
+            #[test]
+            fn encoding() {
+                let zero = "0".repeat(BYTES_LEN * 2);
+                assert_eq!(
+                    &serde_json::to_string(&Wrapper {
+                        val: [0; BYTES_LEN]
+                    })
+                    .unwrap(),
+                    &format!("\"0x{}\"", zero)
+                );
+
+                assert_eq!(
+                    &serde_json::to_string(&Wrapper {
+                        val: [123; BYTES_LEN]
+                    })
+                    .unwrap(),
+                    &format!("\"0x{}\"", generate_string_value("7", "b"))
+                );
+
+                let max = "f".repeat(BYTES_LEN * 2);
+                assert_eq!(
+                    &serde_json::to_string(&Wrapper {
+                        val: [u8::MAX; BYTES_LEN]
+                    })
+                    .unwrap(),
+                    &format!("\"0x{}\"", max)
+                );
+            }
+
+            #[test]
+            fn decoding() {
+                let zero = "0".repeat(BYTES_LEN * 2);
+                assert_eq!(
+                    serde_json::from_str::<Wrapper>(&format!("\"0x{}\"", zero)).unwrap(),
+                    Wrapper {
+                        val: [0; BYTES_LEN]
+                    },
+                );
+                assert_eq!(
+                    serde_json::from_str::<Wrapper>(&format!(
+                        "\"0x{}\"",
+                        generate_string_value("7", "b")
+                    ))
+                    .unwrap(),
+                    Wrapper {
+                        val: [123; BYTES_LEN]
+                    },
+                );
+
+                let max = "f".repeat(BYTES_LEN * 2);
+                assert_eq!(
+                    serde_json::from_str::<Wrapper>(&format!("\"0x{}\"", max)).unwrap(),
+                    Wrapper {
+                        val: [u8::MAX; BYTES_LEN]
+                    },
+                );
+
+                // Require 0x.
+                serde_json::from_str::<Wrapper>(&format!("\"{}\"", "0".repeat(BYTES_LEN * 2)))
+                    .unwrap_err();
+
+                let exceed_max = "f".repeat((BYTES_LEN * 2) + 1);
+                // Wrong length.
+                serde_json::from_str::<Wrapper>(&format!("\"0x{}\"", exceed_max)).unwrap_err();
+            }
+        }
     };
 }
 

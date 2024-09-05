@@ -32,3 +32,98 @@ where
     array.copy_from_slice(&decoded);
     Ok(array.into())
 }
+
+#[cfg(test)]
+mod test {
+    use std::str::FromStr;
+
+    use alloy_primitives::Address;
+    use serde::{Deserialize, Serialize};
+    use serde_json;
+
+    #[derive(Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(transparent)]
+    struct Wrapper {
+        #[serde(with = "super")]
+        val: Address,
+    }
+
+    #[test]
+    fn encoding() {
+        assert_eq!(
+            &serde_json::to_string(&Wrapper {
+                val: Address::from_str("0000000000000000000000000000000000000000").unwrap()
+            })
+            .unwrap(),
+            "\"0x0000000000000000000000000000000000000000\""
+        );
+        assert_eq!(
+            &serde_json::to_string(&Wrapper {
+                val: Address::from_str("0000000000000000000000000000000000000001").unwrap()
+            })
+            .unwrap(),
+            "\"0x0000000000000000000000000000000000000001\""
+        );
+        assert_eq!(
+            &serde_json::to_string(&Wrapper {
+                val: Address::from_str("1000000000000000000000000000000000000000").unwrap()
+            })
+            .unwrap(),
+            "\"0x1000000000000000000000000000000000000000\""
+        );
+        assert_eq!(
+            &serde_json::to_string(&Wrapper {
+                val: Address::from_str("1234567890000000000000000000000000000000").unwrap()
+            })
+            .unwrap(),
+            "\"0x1234567890000000000000000000000000000000\""
+        );
+        assert_eq!(
+            &serde_json::to_string(&Wrapper { val: Address::ZERO }).unwrap(),
+            "\"0x0000000000000000000000000000000000000000\""
+        );
+    }
+
+    #[test]
+    fn decoding() {
+        assert_eq!(
+            serde_json::from_str::<Wrapper>("\"0x0000000000000000000000000000000000000000\"")
+                .unwrap(),
+            Wrapper { val: Address::ZERO },
+        );
+        assert_eq!(
+            serde_json::from_str::<Wrapper>("\"0x0000000000000000000000000000000000000001\"")
+                .unwrap(),
+            Wrapper {
+                val: Address::from_str("0000000000000000000000000000000000000001").unwrap()
+            },
+        );
+        assert_eq!(
+            serde_json::from_str::<Wrapper>("\"0x1000000000000000000000000000000000000000\"")
+                .unwrap(),
+            Wrapper {
+                val: Address::from_str("1000000000000000000000000000000000000000").unwrap()
+            },
+        );
+        assert_eq!(
+            serde_json::from_str::<Wrapper>("\"0x1234567890000000000000000000000000000000\"")
+                .unwrap(),
+            Wrapper {
+                val: Address::from_str("1234567890000000000000000000000000000000").unwrap()
+            },
+        );
+        // Wrong length.
+        serde_json::from_str::<Wrapper>("\"0x0\"").unwrap_err();
+        serde_json::from_str::<Wrapper>("\"0x0400\"").unwrap_err();
+        serde_json::from_str::<Wrapper>("\"0x12345678900000000000000000000000000000001\"")
+            .unwrap_err();
+        // Requires 0x.
+        serde_json::from_str::<Wrapper>("\"1234567890000000000000000000000000000000\"")
+            .unwrap_err();
+        serde_json::from_str::<Wrapper>("\"ff34567890000000000000000000000000000000\"")
+            .unwrap_err();
+        // Contains invalid characters.
+        serde_json::from_str::<Wrapper>("\"0x-100000000000000000000000000000000000000\"")
+            .unwrap_err();
+    }
+}

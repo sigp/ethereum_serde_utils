@@ -47,3 +47,57 @@ where
 {
     deserializer.deserialize_any(ListOfBytesListVisitor)
 }
+
+#[cfg(test)]
+mod test {
+    use serde::{Deserialize, Serialize};
+
+    #[derive(Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(transparent)]
+    struct Wrapper {
+        #[serde(with = "super")]
+        val: Vec<Vec<u8>>,
+    }
+
+    #[test]
+    fn encoding() {
+        assert_eq!(
+            &serde_json::to_string(&Wrapper { val: vec![vec![0]] }).unwrap(),
+            "[\"0x00\"]"
+        );
+        assert_eq!(
+            &serde_json::to_string(&Wrapper {
+                val: vec![vec![0, 1, 2]]
+            })
+            .unwrap(),
+            "[\"0x000102\"]"
+        );
+        assert_eq!(
+            &serde_json::to_string(&Wrapper {
+                val: vec![vec![0], vec![0, 1, 2]]
+            })
+            .unwrap(),
+            "[\"0x00\",\"0x000102\"]"
+        );
+    }
+
+    #[test]
+    fn decoding() {
+        assert_eq!(
+            serde_json::from_str::<Wrapper>("[\"0x00\"]").unwrap(),
+            Wrapper { val: vec![vec![0]] },
+        );
+        assert_eq!(
+            serde_json::from_str::<Wrapper>("[\"0x000102\"]").unwrap(),
+            Wrapper {
+                val: vec![vec![0, 1, 2]]
+            },
+        );
+        assert_eq!(
+            serde_json::from_str::<Wrapper>("[\"0x00\",\"0x000102\"]").unwrap(),
+            Wrapper {
+                val: vec![vec![0], vec![0, 1, 2]]
+            },
+        );
+    }
+}
