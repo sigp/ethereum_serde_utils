@@ -22,7 +22,7 @@ macro_rules! define_mod {
 
         impl<'a, T> serde::de::Visitor<'a> for QuotedIntVisitor<T>
         where
-            T: From<$int> + Into<$int> + Copy + TryFrom<u64>,
+            T: TryFrom<$int> + Into<$int> + Copy + TryFrom<u64>,
         {
             type Value = T;
 
@@ -38,9 +38,13 @@ macro_rules! define_mod {
             where
                 E: serde::de::Error,
             {
-                s.parse::<$int>()
-                    .map(T::from)
-                    .map_err(serde::de::Error::custom)
+                let value = s.parse::<$int>().map_err(serde::de::Error::custom)?;
+                T::try_from(value).map_err(|_| {
+                    serde::de::Error::custom(format!(
+                        "conversion from int to {} failed",
+                        stringify!(T)
+                    ))
+                })
             }
 
             fn visit_u64<E>(self, v: u64) -> Result<Self::Value, E>
@@ -62,7 +66,7 @@ macro_rules! define_mod {
         #[serde(transparent)]
         pub struct MaybeQuoted<T>
         where
-            T: From<$int> + Into<$int> + Copy + TryFrom<u64>,
+            T: TryFrom<$int> + Into<$int> + Copy + TryFrom<u64>,
         {
             #[serde(with = "self")]
             pub value: T,
@@ -76,7 +80,7 @@ macro_rules! define_mod {
         #[serde(transparent)]
         pub struct Quoted<T>
         where
-            T: From<$int> + Into<$int> + Copy + TryFrom<u64>,
+            T: TryFrom<$int> + Into<$int> + Copy + TryFrom<u64>,
         {
             #[serde(with = "require_quotes")]
             pub value: T,
@@ -86,7 +90,7 @@ macro_rules! define_mod {
         pub fn serialize<S, T>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
         where
             S: Serializer,
-            T: From<$int> + Into<$int> + Copy,
+            T: TryFrom<$int> + Into<$int> + Copy,
         {
             let v: $int = (*value).into();
             serializer.serialize_str(&format!("{}", v))
@@ -96,7 +100,7 @@ macro_rules! define_mod {
         pub fn deserialize<'de, D, T>(deserializer: D) -> Result<T, D::Error>
         where
             D: Deserializer<'de>,
-            T: From<$int> + Into<$int> + Copy + TryFrom<u64>,
+            T: TryFrom<$int> + Into<$int> + Copy + TryFrom<u64>,
         {
             deserializer.deserialize_any(QuotedIntVisitor {
                 require_quotes: false,
@@ -114,7 +118,7 @@ macro_rules! define_mod {
             pub fn deserialize<'de, D, T>(deserializer: D) -> Result<T, D::Error>
             where
                 D: Deserializer<'de>,
-                T: From<$int> + Into<$int> + Copy + TryFrom<u64>,
+                T: TryFrom<$int> + Into<$int> + Copy + TryFrom<u64>,
             {
                 deserializer.deserialize_any(QuotedIntVisitor {
                     require_quotes: true,
